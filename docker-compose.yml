@@ -1,3 +1,4 @@
+# mariadbの設定
 version: '3.8'
 services:
   mariadb:
