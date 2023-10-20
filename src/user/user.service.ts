@@ -3,34 +3,76 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 
+/**
+ * service.ts => controllerを補助する役割を担う
+ * サービス自体のロジックはここに基本的記述していく（いわば、modelのようなもの）
+ * データベースに保存したり、APIからのデータを取得したりして、データを扱いやすくしてコンローラーに渡す
+ */
 @Injectable()
 export class UserService {
-  // 追加(ここで色々とデータベースに保存したり、APIからのデータを扱うなどサービスロジックを記述すると思われる)
   constructor(
     @InjectRepository(User)
+    // Repositoryはデータベースのデータを操作するためのオブジェクト
     private usersRepository: Repository<User>,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  // ユーザー情報を保存する
+  async create(createUserDto: CreateUserDto): Promise<void> {
+    console.log('create', createUserDto)
+    const createUser = {
+      nickName: createUserDto.nickName,
+      isAdult: Boolean(createUserDto.isAdult)
+    }
+
+    await this.usersRepository.save(createUser); 
   }
 
-  findAll() {
-    return `This action returns all user`;
+  // 登録されているすべてのユーザー情報を取得する
+  async findAll(): Promise<User[]> {
+    await this.usersRepository.find()
+
+    return await this.usersRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  // ユーザの詳細情報を取得する
+  async findOne(id: number): Promise<User> {
+    const userId = {
+      id: id //id(column): id(userId)
+    };
+
+    const user = await this.usersRepository.findOneBy(userId);
+
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  // ユーザー情報の削除
+  async remove(id: number): Promise<Boolean> {
+    const userId = {
+      id: id //id(column): id(userId)
+    };
+
+    const result = await this.usersRepository.delete(userId);
+
+    return result.affected === 1;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+  // ユーザー情報の更新
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<boolean> {
+    const updateUser = {
+      nickName: updateUserDto.nickName,
+      isAdult: updateUserDto.isAdult
+    }
+
+    try {
+      await this.usersRepository.update(id, updateUser)
+      return true; // 保存に成功
+      
+    } catch(error) {
+      console.error('データの更新に失敗しました:', error);
+      return false; // 保存に失敗
+    }
+  }  
 }

@@ -1,14 +1,14 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-// table設定
+// テーブルのカラム設定
 @Entity('user')
 export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
-    name: string;
+    nickName: string;
 
-    @Column({ default: true })
-    isActive: boolean;
+    @Column({ default: false })
+    isAdult: boolean;
 }

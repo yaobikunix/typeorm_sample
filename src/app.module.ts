@@ -12,8 +12,7 @@ import { DataSource } from 'typeorm';
  * app.module.tsは、アプリケーション（フレームワークの中枢になっている部分phpで言うところのbaseに近い）
  */
 @Module({
-  // あとで調べる
-  // exports: [],
+  // exports: [], //あとで調べる
   imports: [
      // データベースへの接続
     TypeOrmModule.forRoot(sqlDataSource.options),
@@ -26,6 +25,6 @@ import { DataSource } from 'typeorm';
 })
 
 export class AppModule {
-  // データベースとの接続する前にインスタンス化するイメージ（インスタンス化してなかったらエラーになると思われる）
+  // データベースとの接続する前にインスタンス化するイメージ
   constructor(private dataSource: DataSource) {}
 }
