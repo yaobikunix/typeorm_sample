@@ -5,6 +5,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 
+
 export const template = (id: number) => {
   return {
     delete: {
@@ -141,10 +142,12 @@ export class UserController {
 
     return `
       ${userDescription}
-      <div style="display:flex; gap:20px;">
+      <div style="display:flex; gap:20px; margin-bottom: 20px;">
         ${template(findUser.id).delete.link}
         ${template(findUser.id).update.link}
       </div>
+
+      <a href="/user">戻る</a>
 
       ${template(findUser.id).delete.script}
     `;

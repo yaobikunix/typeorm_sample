@@ -9,7 +9,7 @@ export class AppController {
   ) {}
 
   @Get()
-  inputUserForm(): string {
-    return this.appService.inputUserForm();
+  createUser(): string {
+    return this.appService.createUser();
   }
 }
