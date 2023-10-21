@@ -1,9 +1,12 @@
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, Res, Header } from '@nestjs/common';
+import { Controller, Get, Req, Post, Body, Patch, Param, Delete, Redirect, Res, Header } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+// バリーデーション関連
+import { UsePipes } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 
 
 export const template = (id: number) => {
@@ -102,25 +105,32 @@ export class UserController {
 
     const userList = users.map((user) => {
       return `
-        <h1>登録者リスト</h1>
-        <div>
+        <div style="border-bottom:2px solid #E0E0E0; padding-bottom: 20px;">
           <p>登録者名：${user.nickName}</p>
           <a href=/user/${user.id}>詳細を見る</a>
         </div>
       `;
     }).join('');
 
-    return userList
+    return `
+      <h1>登録者リスト</h1>
+      ${userList}
+    `
   }
 
   // 作成
   @Post('create')
+  @UsePipes(new ValidationPipe({ transform: true })) // バリーデーション機能をONにする
   @Redirect('/user')
   async create(
-    @Body() createUserDto: CreateUserDto
+    @Body() createUser: CreateUserDto
   ): Promise<void> {
-    console.log(createUserDto)
-    return await this.userService.create(createUserDto);
+    console.log(createUser)
+    const isSaved = await this.userService.create(createUser);
+
+    if (!isSaved) {
+      throw new Error('データの保存に失敗しました');
+    }
   }
 
   // 詳細
@@ -148,14 +158,13 @@ export class UserController {
       </div>
 
       <a href="/user">戻る</a>
-
       ${template(findUser.id).delete.script}
     `;
   }
 
   // 削除
   @Delete(':id')
-  //@Redirect('/user') //リダイレクトがうまくいかないので柳村さんに相談する
+  //@Redirect('/user') // 何故かリダイレクトがうまくいかないので柳村さんに相談する
   async remove(
     @Param('id') id: string
   ): Promise<object> {
@@ -166,6 +175,7 @@ export class UserController {
     }
   }
 
+  // 編集
   @Get(':id/update')
   async up(
     @Param('id') id:string
@@ -181,9 +191,9 @@ export class UserController {
 
     // ユーザ情報を作成するフォーム
     const updateForm = `
-        <div style="font-weight:bold; margin-bottom:10px;">
+        <h1 style="font-weight:bold; margin-bottom:10px;">
           ユーザー情報の更新
-        </div>
+        </h1>
         <div>
           <label for="${params.nickName.name}">ユーザー名:</label>
           <input 
@@ -210,9 +220,9 @@ export class UserController {
           </button>
         </div>
 
-      <a href="/user" style="text-decoration:none; border:1px solid; padding:5px; color:black;">
-        詳細一覧へ
-      </a>
+        <a href="/user">
+          登録者リストへ
+        </a>
 
       <script>
       document.getElementById('user-update').addEventListener('click', 
@@ -253,11 +263,13 @@ export class UserController {
 
   // 更新
   @Patch(':id')
-  //@Redirect('/') //リダイレクトがうまくいかないので柳村さんに相談する
+  @UsePipes(new ValidationPipe({ transform: true })) // バリーデーション機能をONにする
+  //@Redirect('/') // 何故かリダイレクトがうまくいかないので柳村さんに相談する
   async update(
     @Param('id') id: string, 
     @Body() updateUserDto: UpdateUserDto
   ): Promise<object> {
+    console.log('update', updateUserDto)
     const isUpdate = await this.userService.update(+id, updateUserDto);
 
     return {

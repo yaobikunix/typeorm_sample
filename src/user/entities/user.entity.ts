@@ -9,6 +9,6 @@ export class User {
     @Column()
     nickName: string;
 
-    @Column({ default: false })
+    @Column({default: false})
     isAdult: boolean;
 }

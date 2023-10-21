@@ -20,14 +20,16 @@ export class UserService {
   ) {}
 
   // ユーザー情報を保存する
-  async create(createUserDto: CreateUserDto): Promise<void> {
-    console.log('create', createUserDto)
-    const createUser = {
-      nickName: createUserDto.nickName,
-      isAdult: Boolean(createUserDto.isAdult)
+  async create(createUser: CreateUserDto): Promise<boolean> {
+    try {
+      await this.usersRepository.save(createUser); 
+      return true; // 保存に成功
+      
+    } catch(error) {
+      console.error('データの保存に失敗しました:', error);
+      return false; // 保存に失敗
     }
-
-    await this.usersRepository.save(createUser); 
+    // await 
   }
 
   // 登録されているすべてのユーザー情報を取得する
@@ -68,11 +70,11 @@ export class UserService {
 
     try {
       await this.usersRepository.update(id, updateUser)
-      return true; // 保存に成功
+      return true; // 更新に成功
       
     } catch(error) {
       console.error('データの更新に失敗しました:', error);
-      return false; // 保存に失敗
+      return false; // 更新に失敗
     }
   }  
 }
