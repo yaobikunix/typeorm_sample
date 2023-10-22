@@ -29,7 +29,6 @@ export class UserService {
       console.error('データの保存に失敗しました:', error);
       return false; // 保存に失敗
     }
-    // await 
   }
 
   // 登録されているすべてのユーザー情報を取得する

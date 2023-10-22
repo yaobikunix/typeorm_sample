@@ -8,92 +8,42 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsePipes } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 
+// ユーザーの削除・編集を実行する為のテンプレート＋スクリプトの呼び出し
+import { templateDeleteUser } from 'src/template/delete.user'; 
+import { templateUpdateUser } from 'src/template/update.user'; 
 
-export const template = (id: number) => {
+// 削除、編集を行うためのリンク
+export const selectLinks = (id: number) => {
   return {
-    delete: {
-      link: `
-        <a
-          href="/user/${id}"
-          id="user-delete"
-          style="text-decoration:none; border:1px solid; padding:5px; color:red;
-        ">
-          削除する
-        </a>
-      `,
-      script: `
-        <script>
-          document.getElementById('user-delete').addEventListener('click', 
-            async() => {
-              try {
-                const response = await fetch('/user/${id}', {
-                  method: 'DELETE',
-                  redirect: 'follow',
-                }).then((res) => res.json());
-
-                if (response.result) {
-                  alert("データを削除しました。");
-                  window.location.href = '/'
-                } else {
-                  alert("データの削除に失敗しました。");
-                }
-
-              } catch (err) {
-                alert(err.message);
-              }
-            }
-          );
-        </script>
-      `,
-    },
-    update: {
-      link: `
-        <a
-          href="/user/${id}/update" 
-          data-method="PATCH" 
-          id="user-update"
-          style="text-decoration:none; border:1px solid; padding:5px; color:blue;
-        ">
-          編集する
-        </a>
-      `,
-      script: `
-        <script>
-          document.getElementById('user-update').addEventListener('click', 
-            async() => {
-              try {
-                const response = await fetch('/user/${id}', {
-                  method: 'PATCH',
-                  redirect: 'follow',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(updateData),
-                }).then((res) => res.json());
-
-                if (response.result) {
-                  alert("データを編集しました。");
-                  window.location.href = '/'
-                } else {
-                  alert("データの編集に失敗しました。");
-                }
-
-              } catch (err) {
-                alert(err.message);
-              }
-            }
-          );
-        </script>
-      `,
-    },
+    delete: `
+      <a
+        href="/user/${id}"
+        id="user-delete"
+        style="text-decoration:none; border:1px solid; padding:5px; color:red;"
+      >
+        削除する
+      </a>
+    `,
+    update: `
+      <a
+        href="/user/${id}/update" 
+        data-method="PATCH" 
+        id="user-update"
+        style="text-decoration:none; border:1px solid; padding:5px; color:blue;"
+      >
+        編集する
+      </a>
+    `,
   }
 }
 
 @Controller('user')
 export class UserController {
+  // UserService（ロジックいわばモデル部分）の呼び出して下記で使えるようにする
   constructor(
-    // UserService（ロジックいわばモデル部分）の呼び出して下記で使えるようにする
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly templateDeleteUser: templateDeleteUser,
+    private readonly templateUpdateUser: templateUpdateUser
   ) {}
 
   // 全部
@@ -150,15 +100,20 @@ export class UserController {
       </div>
     `;
 
+    // ユーザー情報を削除するためのスクリプト
+    const deleteUserScript = this.templateDeleteUser.actionScript(+id)
+
     return `
-      ${userDescription}
-      <div style="display:flex; gap:20px; margin-bottom: 20px;">
-        ${template(findUser.id).delete.link}
-        ${template(findUser.id).update.link}
+      <div>
+        ${userDescription}
+        <div style="display:flex; gap:20px; margin-bottom: 20px;">
+          ${selectLinks(+id).delete}
+          ${selectLinks(+id).update}
+        </div>
+        <a href="/user">戻る</a>
       </div>
 
-      <a href="/user">戻る</a>
-      ${template(findUser.id).delete.script}
+      ${deleteUserScript}
     `;
   }
 
@@ -182,83 +137,16 @@ export class UserController {
   ): Promise<String> {
     const findUser = await this.userService.findOne(+id);
 
-    // 送信するパラメータ
-    const params = {
-      nickName: { name: 'nickName', value: '' },
-      isAdult: { name: 'isAdult', value: true }
-    };
-    
+    // ユーザ情報を更新するフォーム
+    const updateUserForm = this.templateUpdateUser.inputForm(findUser);
 
-    // ユーザ情報を作成するフォーム
-    const updateForm = `
-        <h1 style="font-weight:bold; margin-bottom:10px;">
-          ユーザー情報の更新
-        </h1>
-        <div>
-          <label for="${params.nickName.name}">ユーザー名:</label>
-          <input 
-            type="text" 
-            name="${params.nickName.name}" 
-            value="${findUser.nickName}"
-          >
-        </div>
-        <div>
-          <label for="isAdult">あなたは20以上ですか？？:</label>
-          <input 
-            type="checkbox" 
-            name="${params.isAdult.name}" 
-            value="${params.isAdult.value}"
-            ${findUser.isAdult ? 'checked' : ''}
-          >
-        </div>
-        <div>
-          <button 
-            id="user-update" 
-            style="width:50px; margin:10px 0 20px; cursor:pointer;"
-          >
-          更新
-          </button>
-        </div>
+    // ユーザー情報を更新するSクリプト
+    const updateUserScript = this.templateUpdateUser.actionScript(+id)
 
-        <a href="/user">
-          登録者リストへ
-        </a>
-
-      <script>
-      document.getElementById('user-update').addEventListener('click', 
-        async() => {
-          const params = {
-            id: ${id},
-            nickName: document.querySelector('[name=nickName]').value,
-            isAdult: document.querySelector('[name=isAdult]').checked
-          }
-
-          try {
-            const response = await fetch('/user/${id}', {
-              method:'PATCH',
-              redirect: 'follow',
-              body: JSON.stringify(params),
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            }).then((res) => res.json());
-
-            if (response.result) {
-              alert("データを編集しました。");
-              window.location.href = '/user'
-            } else {
-              alert("データの編集に失敗しました。");
-            }
-
-          } catch (err) {
-            alert(err.message);
-          }
-        }
-      );
-    </script>
+    return `
+      ${updateUserForm}
+      ${updateUserScript}
     `
-
-    return updateForm;
   }
 
   // 更新
